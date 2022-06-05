@@ -52,21 +52,6 @@ RUN mkdir wallabag_v2 && \
   curl -sL https://github.com/joshp23/ttrss-to-wallabag-v2/archive/master.tar.gz | \
   tar xzvpf - --strip-components=2 -C wallabag_v2 ttrss-to-wallabag-v2-master/wallabag_v2
 
-# Download themes
-WORKDIR /var/www/themes.local
-
-# Fix safari: TypeError: window.requestIdleCallback is not a function
-# https://community.tt-rss.org/t/typeerror-window-requestidlecallback-is-not-a-function/1755/26
-# https://github.com/pladaria/requestidlecallback-polyfill
-COPY src/local-overrides.js local-overrides.js
-
-## Feedly
-RUN curl -sL https://github.com/levito/tt-rss-feedly-theme/archive/master.tar.gz | \
-  tar xzvpf - --strip-components=1 --wildcards -C . tt-rss-feedly-theme-master/feedly*.css tt-rss-feedly-theme-master/feedly/fonts
-
-## RSSHub
-RUN curl -sL https://github.com/DIYgod/ttrss-theme-rsshub/archive/master.tar.gz | \
-  tar xzvpf - --strip-components=2 -C . ttrss-theme-rsshub-master/dist/rsshub.css
 
 FROM docker.io/alpine:3
 
@@ -93,7 +78,7 @@ RUN chmod -x /wait-for.sh && chmod -x /docker-entrypoint.sh && apk add --update 
   php8-gd php8-mbstring php8-intl php8-xml php8-curl \
   php8-session php8-tokenizer php8-dom php8-fileinfo \
   php8-json php8-iconv php8-pcntl php8-posix php8-zip php8-exif \
-  ca-certificates && ln -s /usr/bin/php8 /usr/bin/php && rm -rf /var/cache/apk/* \
+  ca-certificates && rm -rf /var/cache/apk/* \
   # Update libiconv as the default version is too low
   && apk add gnu-libiconv=1.15-r3 --update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.13/community/ \
   && rm -rf /var/www
@@ -139,6 +124,24 @@ RUN ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases
   "$ALPINE_GLIBC_I18N_PACKAGE_FILENAME" && \
   chown nobody:nginx -R /var/www && \
   git config --global --add safe.directory /var/www
+
+# Download themes
+WORKDIR /var/www/themes.local
+RUN apk add --update tar
+# Fix safari: TypeError: window.requestIdleCallback is not a function
+# https://community.tt-rss.org/t/typeerror-window-requestidlecallback-is-not-a-function/1755/26
+# https://github.com/pladaria/requestidlecallback-polyfill
+COPY src/local-overrides.js local-overrides.js
+
+# ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+## Feedly
+RUN curl -sL https://github.com/Jkker/tt-rss-feedly-theme/archive/master.tar.gz | \
+  tar xzvpf - --strip-components=1 --wildcards -C . tt-rss-feedly-theme-master/feedly*.css tt-rss-feedly-theme-master/feedly/fonts
+
+## RSSHub
+RUN curl -sL https://github.com/DIYgod/ttrss-theme-rsshub/archive/master.tar.gz | \
+  tar xzvpf - --strip-components=2 -C . ttrss-theme-rsshub-master/dist/rsshub.css
+
 
 EXPOSE 80
 
